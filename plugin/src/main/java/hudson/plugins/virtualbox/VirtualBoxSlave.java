@@ -27,7 +27,7 @@ public class VirtualBoxSlave extends Slave {
   private final String virtualMachineName;
   private final String virtualMachineType;
   private final String virtualMachineStopMode;
-  
+
   @DataBoundConstructor
   public VirtualBoxSlave(
       String name, String nodeDescription, String remoteFS, String numExecutors, Mode mode, String labelString,

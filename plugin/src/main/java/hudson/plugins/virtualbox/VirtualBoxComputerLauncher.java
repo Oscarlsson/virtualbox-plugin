@@ -77,16 +77,17 @@ public class VirtualBoxComputerLauncher extends ComputerLauncher {
   @Override
   public void launch(SlaveComputer computer, TaskListener listener) throws IOException, InterruptedException {
       log(listener, "Putting node in idle");
+      log(listener, "---- Launching VM to test connection ----");
 
-      this.launchVm(computer, listener);
+      //this.launchVm(computer, listener);
 
-      //ISession session = VirtualBoxControlV42.getSession(machine);
-      // Waitforcompletion
-      ((VirtualBoxComputer) computer).setHasBeenStarted(true);
       VirtualBoxSlave slave = ((VirtualBoxComputer) computer).getNode();
       VirtualBoxMachine machine = VirtualBoxPlugin.getVirtualBoxMachine(slave.getHostName(), slave.getVirtualMachineName());
+      log(listener, "---- Test connection: Stopping VM ----");
 
-      VirtualBoxUtils.stopVm(machine, slave.getVirtualMachineStopMode(),  new VirtualBoxTaskListenerLog(listener, "[VirtualBox] "));
+
+      ((VirtualBoxComputer) computer).setHasBeenStarted(true);
+      //VirtualBoxUtils.stopVm(machine, slave.getVirtualMachineStopMode(),  new VirtualBoxTaskListenerLog(listener, "[VirtualBox] "));
 
   }
 
@@ -121,6 +122,8 @@ public class VirtualBoxComputerLauncher extends ComputerLauncher {
     log(listener, "Stage 2 beforeDisconnect completed");
   }
 
+
+  //TODO: afterDisconnect?!
   @Override
   public void afterDisconnect(SlaveComputer computer, TaskListener listener) {
     VirtualBoxSlave slave = ((VirtualBoxComputer) computer).getNode();
@@ -136,7 +139,8 @@ public class VirtualBoxComputerLauncher extends ComputerLauncher {
         listener.fatalError("Unable to find specified machine");
       }
       log(listener, Messages.VirtualBoxLauncher_stopVM(machine));
-      long result = VirtualBoxUtils.stopVm(machine, slave.getVirtualMachineStopMode(), new VirtualBoxTaskListenerLog(listener, "[VirtualBox] "));
+      //long result = VirtualBoxUtils.stopVm(machine, slave.getVirtualMachineStopMode(), new VirtualBoxTaskListenerLog(listener, "[VirtualBox] "));
+      long result = 1;
       if (result != 0) {
         listener.fatalError("Unable to stop");
       }
