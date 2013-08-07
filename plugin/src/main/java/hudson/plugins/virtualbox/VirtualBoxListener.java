@@ -7,6 +7,8 @@ import hudson.slaves.*;
 import hudson.model.Node;
 
 import java.io.Serializable;
+import java.util.logging.Logger;
+
 import hudson.model.*;
 
 
@@ -19,12 +21,13 @@ import hudson.tasks.BuildWrapper;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 // http://jenkins.361315.n4.nabble.com/Take-a-slave-off-line-if-a-job-fails-td377500.html
-
 /**
- * @author Christian John
+ * @author Christian John, Oscar Carlsson
  */
 @Extension
 public class VirtualBoxListener extends RunListener<Run> implements Serializable {
+    private static final Logger LOG = Logger.getLogger(VirtualBoxComputerLauncher.class.getName());
+
 
     public VirtualBoxListener() {
         super(Run.class);
@@ -32,27 +35,39 @@ public class VirtualBoxListener extends RunListener<Run> implements Serializable
 
 
 	/* onCompleted EP: RunListener*/
+    // TODO: Doesn't this set it offline always?
+    // TODO: This should stop the VM?
     @Override
     public void onCompleted(Run run, TaskListener listener) {
-	  // Aktuelles Computer-Objekt abgreifen
 	  Computer computer = run.getExecutor().getOwner();
-	  // Versuchen zu beenden
 	  try{
-		// Erst einmal den Build-Server offline-Setzen
-	    computer.setTemporarilyOffline(true,null);
-		// Und noch mal zur Sicherheit hinterher
-	    computer.cliDisconnect("Sicherheit");
-		} catch(Exception e)
+        listener.getLogger().println("job compleded as " + run.getResult().toString());
+        listener.getLogger().println("Setting it temporarily offline");
+        computer.setTemporarilyOffline(true,null);
+		computer.cliDisconnect("Completed job"); //"security"
+
+        } catch(Exception e)
 		{
-		  listener.getLogger().println("Fehler beim Shutdown!");
+		  listener.getLogger().println("Failed to shutdown");
 		}
-		
-	   	
-    //	VirtualBoxMachine machine = VirtualBoxPlugin.getVirtualBoxMachine(super.getHostName(), super.getVirtualMachineName());
-     //VirtualBoxUtils.stopVm(run.getExecutor().getOwner().currentComputer(), new VirtualBoxTaskListenerLog(listener, "[VirtualBox] "));
-	  //slave.getComputer().setTemporarilyOffline(true,null);
 	  listener.getLogger().println("Bye bye VM!");
 
 	}
+
+
+    // TODO: This should start the VM?
+    @Override
+    public void onStarted(Run run, TaskListener listener) {
+        listener.getLogger().println("..Going to start a build..");
+        VirtualBoxComputer computer = (VirtualBoxComputer) run.getExecutor().getOwner();
+        VirtualBoxComputerLauncher launcher = (VirtualBoxComputerLauncher) computer.getLauncher();
+
+        try{
+            launcher.launchVm(computer, listener);
+        } catch (Exception e) {
+
+        }
+
+    }
 
 }

@@ -3,10 +3,14 @@ package hudson.plugins.virtualbox;
 import hudson.model.Descriptor;
 import hudson.model.TaskListener;
 import hudson.slaves.ComputerLauncher;
+import hudson.slaves.ComputerListener;
 import hudson.slaves.SlaveComputer;
+import org.virtualbox_4_2.ISession;
+
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 
 /**
  * {@link ComputerLauncher} for VirtualBox that waits for the instance to really come up before processing to
@@ -31,42 +35,59 @@ public class VirtualBoxComputerLauncher extends ComputerLauncher {
     this.delegate = delegate;
   }
 
+  public void launchVm(SlaveComputer computer, TaskListener listener) throws IOException, InterruptedException{
+      VirtualBoxSlave slave = ((VirtualBoxComputer) computer).getNode();
+      log(listener, "Launching node " + slave.getVirtualMachineName());
+      try {
+          // Connect to VirtualBox host
+          VirtualBoxMachine machine = VirtualBoxPlugin.getVirtualBoxMachine(slave.getHostName(), slave.getVirtualMachineName());
+          if (machine == null) {
+              listener.fatalError("Unable to find specified machine");
+              return;
+          }
+          log(listener, Messages.VirtualBoxLauncher_startVM(machine));
+          long result = VirtualBoxUtils.startVm(machine, slave.getVirtualMachineType(), new VirtualBoxTaskListenerLog(listener, "[VirtualBox] "));
+          if (result != 0) {
+              listener.fatalError("Unable to launch");
+              return;
+          }
+      } catch (Throwable e) {
+          listener.fatalError(e.getMessage(), e);
+          e.printStackTrace(listener.getLogger());
+          LOG.log(Level.WARNING, e.getMessage(), e);
+          return;
+      }
+
+      // Stage 2 of the launch. Called after the VirtualBox instance comes up.
+      boolean successful = false;
+      int attempt = 0;
+      while (!successful) {
+          attempt++;
+          log(listener, "Sleep before stage 2 launcher, attempt " + attempt);
+          Thread.sleep(10 * SECOND);
+          successful = delegateLaunch(computer, listener);
+          if (!successful && attempt > 10) {
+              log(listener, "Maximum number of attempts reached");
+              return;
+          }
+      }
+  }
+
+  //TODO: Explain this method. Why is it separated from launchVM?
   @Override
   public void launch(SlaveComputer computer, TaskListener listener) throws IOException, InterruptedException {
-    VirtualBoxSlave slave = ((VirtualBoxComputer) computer).getNode();
-    log(listener, "Launching node " + slave.getVirtualMachineName());
-    try {
-      // Connect to VirtualBox host
+      log(listener, "Putting node in idle");
+
+      this.launchVm(computer, listener);
+
+      //ISession session = VirtualBoxControlV42.getSession(machine);
+      // Waitforcompletion
+      ((VirtualBoxComputer) computer).setHasBeenStarted(true);
+      VirtualBoxSlave slave = ((VirtualBoxComputer) computer).getNode();
       VirtualBoxMachine machine = VirtualBoxPlugin.getVirtualBoxMachine(slave.getHostName(), slave.getVirtualMachineName());
-      if (machine == null) {
-        listener.fatalError("Unable to find specified machine");
-        return;
-      }
-      log(listener, Messages.VirtualBoxLauncher_startVM(machine));
-      long result = VirtualBoxUtils.startVm(machine, slave.getVirtualMachineType(), new VirtualBoxTaskListenerLog(listener, "[VirtualBox] "));
-      if (result != 0) {
-        listener.fatalError("Unable to launch");
-        return;
-      }
-    } catch (Throwable e) {
-      listener.fatalError(e.getMessage(), e);
-      e.printStackTrace(listener.getLogger());
-      LOG.log(Level.WARNING, e.getMessage(), e);
-      return;
-    }
-    // Stage 2 of the launch. Called after the VirtualBox instance comes up.
-    boolean successful = false;
-    int attempt = 0;
-    while (!successful) {
-      attempt++;
-      log(listener, "Sleep before stage 2 launcher, attempt " + attempt);
-      Thread.sleep(10 * SECOND);
-      successful = delegateLaunch(computer, listener);
-      if (!successful && attempt > 10) {
-        log(listener, "Maximum number of attempts reached");
-        return;
-      }
-    }
+
+      VirtualBoxUtils.stopVm(machine, slave.getVirtualMachineStopMode(),  new VirtualBoxTaskListenerLog(listener, "[VirtualBox] "));
+
   }
 
   /**
@@ -81,7 +102,7 @@ public class VirtualBoxComputerLauncher extends ComputerLauncher {
       log(listener, "Stage 2 launcher completed");
       return computer.isOnline();
     } catch (IOException e) {
-      log(listener, "Unable to launch: " + e.getMessage());
+      log(listener, "Unable to launch: " + e.getMessage());    //DRY!
       return false;
     } catch (InterruptedException e) {
       log(listener, "Unable to launch: " + e.getMessage());
