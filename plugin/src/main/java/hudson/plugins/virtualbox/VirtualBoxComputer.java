@@ -1,23 +1,10 @@
 package hudson.plugins.virtualbox;
 
-import com.sun.xml.ws.commons.virtualbox_3_1.IProgress;
-import com.sun.xml.ws.commons.virtualbox_3_1.ISession;
 import hudson.model.Slave;
-import hudson.slaves.ComputerListener;
 import hudson.slaves.SlaveComputer;
+import org.kohsuke.stapler.HttpResponse;
 
 import java.io.IOException;
-import java.util.concurrent.Future;
-
-import hudson.util.Futures;
-import org.kohsuke.stapler.HttpResponse;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
-import org.virtualbox_4_2.IMachine;
-import org.virtualbox_4_2.IProcess;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author Evgeny Mandrikov, Oscar Carlsson

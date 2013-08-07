@@ -3,23 +3,15 @@ package hudson.plugins.virtualbox;
 /* CJ: Extensions for RunListener*/
 
 import hudson.Extension;
+import hudson.model.Computer;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
-import hudson.slaves.*;
-import hudson.model.Node;
 
 import java.io.Serializable;
 import java.util.logging.Logger;
 
-import hudson.model.*;
-
-
 /* CJ: Start normal import*/
-import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
-import hudson.tasks.BuildWrapper;
-
-import org.kohsuke.stapler.DataBoundConstructor;
 
 // http://jenkins.361315.n4.nabble.com/Take-a-slave-off-line-if-a-job-fails-td377500.html
 
@@ -46,15 +38,15 @@ public class VirtualBoxListener extends RunListener<Run> implements Serializable
             VirtualBoxComputer virtualboxcomputer = (VirtualBoxComputer) computer;
 
             //VirtualBoxComputerLauncher launcher = (VirtualBoxComputerLauncher) computer.getLauncher();
-            VirtualBoxSlave slave = ((VirtualBoxComputer) virtualboxcomputer).getNode();
+            VirtualBoxSlave slave = virtualboxcomputer.getNode();
 
-            String hostname           = slave.getHostName();
+            String hostname = slave.getHostName();
             String virtualmachinename = slave.getVirtualMachineName();
             VirtualBoxMachine machine = VirtualBoxPlugin.getVirtualBoxMachine(hostname, virtualmachinename);
 
             listener.getLogger().println("job compleded as " + run.getResult().toString());
             VirtualBoxUtils.stopVm(machine, slave.getVirtualMachineStopMode(), new VirtualBoxTaskListenerLog(listener, "[VirtualBox] "));
-        }else{
+        } else {
             super.onCompleted(run, listener);
         }
 
@@ -76,11 +68,11 @@ public class VirtualBoxListener extends RunListener<Run> implements Serializable
 
             }
 
-        }else{
-            super.onStarted(run,listener);
+        } else {
+            super.onStarted(run, listener);
         }
 
-
-        }
 
     }
+
+}

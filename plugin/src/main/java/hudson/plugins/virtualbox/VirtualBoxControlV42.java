@@ -1,8 +1,9 @@
 package hudson.plugins.virtualbox;
 
+import org.virtualbox_4_2.*;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.virtualbox_4_2.*;
 
 
 /**
@@ -23,7 +24,8 @@ public final class VirtualBoxControlV42 implements VirtualBoxControl {
     public synchronized void disconnect() {
         try {
             virtualboxManager.disconnect();
-        } catch (VBoxException e) {}
+        } catch (VBoxException e) {
+        }
     }
 
     public synchronized boolean isConnected() {
@@ -52,7 +54,7 @@ public final class VirtualBoxControlV42 implements VirtualBoxControl {
                 ISnapshot rootSnapshot = findRootSnapshot(machine);
                 List<SnapshotData> snapshots = fillSnapshot(new ArrayList<SnapshotData>(), "", rootSnapshot);
 
-                for (SnapshotData snapshot : snapshots){
+                for (SnapshotData snapshot : snapshots) {
                     result.add(new VirtualBoxMachine(host, machineName + "/" + snapshot.name, machineId, snapshot.id));
                 }
 
@@ -65,7 +67,8 @@ public final class VirtualBoxControlV42 implements VirtualBoxControl {
         String name;
         String id;
     }
-    private static ISnapshot findRootSnapshot(IMachine machine){
+
+    private static ISnapshot findRootSnapshot(IMachine machine) {
         ISnapshot rootSnapshot = machine.getCurrentSnapshot();
         if (rootSnapshot.getParent() != null) {
             rootSnapshot = rootSnapshot.getParent();
@@ -73,15 +76,15 @@ public final class VirtualBoxControlV42 implements VirtualBoxControl {
         return rootSnapshot;
     }
 
-    private List<SnapshotData> fillSnapshot(List<SnapshotData> snapshotList, String snapshotPath, ISnapshot snapshot){
-        if (snapshot != null){
+    private List<SnapshotData> fillSnapshot(List<SnapshotData> snapshotList, String snapshotPath, ISnapshot snapshot) {
+        if (snapshot != null) {
             SnapshotData snapshotData = new SnapshotData();
             snapshotData.name = snapshot.getName(); //snapshotPath + "/" + snapshot.getName();
             snapshotData.id = snapshot.getId();
             snapshotList.add(snapshotData);
 
-            if (snapshot.getChildren() != null){
-                for (ISnapshot child : snapshot.getChildren()){
+            if (snapshot.getChildren() != null) {
+                for (ISnapshot child : snapshot.getChildren()) {
 
                     snapshotList = fillSnapshot(snapshotList, snapshotData.name, child);
                 }
@@ -89,6 +92,7 @@ public final class VirtualBoxControlV42 implements VirtualBoxControl {
         }
         return snapshotList;
     }
+
     /**
      * Starts specified VirtualBox virtual machine.
      *
@@ -123,7 +127,8 @@ public final class VirtualBoxControlV42 implements VirtualBoxControl {
             log.logInfo("node " + machineName + " in state " + state.toString());
             try {
                 Thread.sleep(1000);
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+            }
             state = machine.getState();
         }
 
@@ -178,7 +183,7 @@ public final class VirtualBoxControlV42 implements VirtualBoxControl {
 
         // powerUp from Saved, Aborted or PoweredOff states
         String env = "";   //TODO: why env?
-        if (snapshot != null){
+        if (snapshot != null) {
             session = getSession(machine);
             progress = session.getConsole().restoreSnapshot(snapshot);
             progress.waitForCompletion(-1);
@@ -248,7 +253,8 @@ public final class VirtualBoxControlV42 implements VirtualBoxControl {
             log.logInfo("node " + machineName + " in state " + state.toString());
             try {
                 Thread.sleep(1000);
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+            }
             state = machine.getState();
         }
 
@@ -270,7 +276,7 @@ public final class VirtualBoxControlV42 implements VirtualBoxControl {
         if (MachineState.Stuck == state || "powerdown".equals(stopMode)) {                 //TODO: Hardcoded stopMode! There are a enum of them.
             // for Stuck state call powerDown and go to PoweredOff state
             progress = session.getConsole().powerDown();
-        }else if (snapshot != null) {
+        } else if (snapshot != null) {
             progress = session.getConsole().powerDown();
             progress.waitForCompletion(-1);
 
@@ -336,14 +342,16 @@ public final class VirtualBoxControlV42 implements VirtualBoxControl {
             while (isTransientState(machine.getSessionState())) {
                 try {
                     Thread.sleep(500);
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                }
             }
         }
 
         while (isTransientState(session.getState())) {
             try {
                 Thread.sleep(500);
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+            }
         }
 
         return session;
@@ -354,17 +362,20 @@ public final class VirtualBoxControlV42 implements VirtualBoxControl {
         while (isTransientState(machine.getSessionState()) || isTransientState(session.getState())) {
             try {
                 Thread.sleep(500);
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+            }
         }
 
         try {
             session.unlockMachine();
-        } catch (VBoxException e) {}
+        } catch (VBoxException e) {
+        }
 
         while (isTransientState(machine.getSessionState()) || isTransientState(session.getState())) {
             try {
                 Thread.sleep(500);
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+            }
         }
     }
 }

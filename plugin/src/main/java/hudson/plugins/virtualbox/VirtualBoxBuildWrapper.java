@@ -4,51 +4,52 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.tasks.BuildWrapper;
-import java.io.IOException;
 import org.kohsuke.stapler.DataBoundConstructor;
+
+import java.io.IOException;
 
 /**
  * @author Evgeny Mandrikov
  */
 public class VirtualBoxBuildWrapper extends BuildWrapper {
-  private String hostName;
-  private String virtualMachineName;
+    private String hostName;
+    private String virtualMachineName;
 
-  @DataBoundConstructor
-  public VirtualBoxBuildWrapper(String hostName, String virtualMachineName) {
-    super();
-    this.hostName = hostName;
-    this.virtualMachineName = virtualMachineName;
-  }
-
-  @Override
-  public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
-    VirtualBoxMachine machine = VirtualBoxPlugin.getVirtualBoxMachine(getHostName(), getVirtualMachineName());
-    listener.getLogger().println(Messages.VirtualBoxLauncher_startVM(machine));
-    VirtualBoxUtils.startVm(machine, "headless", new VirtualBoxTaskListenerLog(listener, "[VirtualBox] ")); // TODO type
-
-    class EnvironmentImpl extends Environment {
-      @Override
-      public boolean tearDown(AbstractBuild build, BuildListener listener) throws IOException, InterruptedException {
-        VirtualBoxMachine machine = VirtualBoxPlugin.getVirtualBoxMachine(getHostName(), getVirtualMachineName());
-        listener.getLogger().println(Messages.VirtualBoxLauncher_stopVM(machine));
-        VirtualBoxUtils.stopVm(machine, "pause", new VirtualBoxTaskListenerLog(listener, "[VirtualBox] "));
-        return true;
-      }
+    @DataBoundConstructor
+    public VirtualBoxBuildWrapper(String hostName, String virtualMachineName) {
+        super();
+        this.hostName = hostName;
+        this.virtualMachineName = virtualMachineName;
     }
 
-    return new EnvironmentImpl();
-  }
+    @Override
+    public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
+        VirtualBoxMachine machine = VirtualBoxPlugin.getVirtualBoxMachine(getHostName(), getVirtualMachineName());
+        listener.getLogger().println(Messages.VirtualBoxLauncher_startVM(machine));
+        VirtualBoxUtils.startVm(machine, "headless", new VirtualBoxTaskListenerLog(listener, "[VirtualBox] ")); // TODO type
 
-  public String getHostName() {
-    return hostName;
-  }
+        class EnvironmentImpl extends Environment {
+            @Override
+            public boolean tearDown(AbstractBuild build, BuildListener listener) throws IOException, InterruptedException {
+                VirtualBoxMachine machine = VirtualBoxPlugin.getVirtualBoxMachine(getHostName(), getVirtualMachineName());
+                listener.getLogger().println(Messages.VirtualBoxLauncher_stopVM(machine));
+                VirtualBoxUtils.stopVm(machine, "pause", new VirtualBoxTaskListenerLog(listener, "[VirtualBox] "));
+                return true;
+            }
+        }
 
-  public String getVirtualMachineName() {
-    return virtualMachineName;
-  }
+        return new EnvironmentImpl();
+    }
 
-  // TODO enable wrapper
+    public String getHostName() {
+        return hostName;
+    }
+
+    public String getVirtualMachineName() {
+        return virtualMachineName;
+    }
+
+    // TODO enable wrapper
 //  @Extension
 //  public static final class DescriptorImpl extends Descriptor<BuildWrapper> {
 //    @Override
